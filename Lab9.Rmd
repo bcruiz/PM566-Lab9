@@ -70,10 +70,11 @@ fun2alt <- function(x) {
 }
 
 # Benchmarking
-microbenchmark::microbenchmark(
+ans_benchmark <- microbenchmark::microbenchmark(
   fun2(x),
   fun2alt(x), unit = 'relative'
 )
+plot(ans_benchmark)
 ```
 
 ## Problem 3: Parallelize everyhing

@@ -59,9 +59,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: relative
-    ##       expr      min       lq     mean   median       uq      max neval
-    ##     fun1() 15.04571 20.65586 15.08735 21.26066 20.65319 9.241889   100
-    ##  fun1alt()  1.00000  1.00000  1.00000  1.00000  1.00000 1.000000   100
+    ##       expr     min       lq     mean   median       uq       max neval
+    ##     fun1() 14.6484 20.49004 3.216777 20.05861 19.01664 0.2448356   100
+    ##  fun1alt()  1.0000  1.00000 1.000000  1.00000  1.00000 1.0000000   100
 
 2.  Find the column max (hint: Checkout the function `max.col()`).
 
@@ -82,16 +82,14 @@ fun2alt <- function(x) {
 }
 
 # Benchmarking
-microbenchmark::microbenchmark(
+ans_benchmark <- microbenchmark::microbenchmark(
   fun2(x),
   fun2alt(x), unit = 'relative'
 )
+plot(ans_benchmark)
 ```
 
-    ## Unit: relative
-    ##        expr     min       lq     mean  median       uq       max neval
-    ##     fun2(x) 8.18345 7.384824 5.934007 6.69656 7.776044 0.7220181   100
-    ##  fun2alt(x) 1.00000 1.000000 1.000000 1.00000 1.000000 1.0000000   100
+![](Lab9_files/figure-gfm/p2-fun2-1.png)<!-- -->
 
 ## Problem 3: Parallelize everyhing
 
@@ -192,14 +190,14 @@ system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 1L))
 ```
 
     ##    user  system elapsed 
-    ##    0.12    0.00    4.38
+    ##    0.11    0.03    4.51
 
 ``` r
 system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 2L))
 ```
 
     ##    user  system elapsed 
-    ##    0.13    0.07    3.55
+    ##    0.18    0.05    3.82
 
 ## Problem 4: Compile this markdown document using Rscript
 
