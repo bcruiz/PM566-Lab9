@@ -3,6 +3,10 @@ Lab 9 - HPC
 Brandyn Ruiz
 10/14/2020
 
+``` r
+library(parallel)
+```
+
 # Learning goals
 
 In this lab, you are expected to learn/put in practice the following
@@ -55,9 +59,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: relative
-    ##       expr     min       lq     mean   median       uq       max neval
-    ##     fun1() 14.2911 18.67422 2.938245 20.93022 19.01735 0.2335808   100
-    ##  fun1alt()  1.0000  1.00000 1.000000  1.00000  1.00000 1.0000000   100
+    ##       expr      min       lq     mean   median       uq      max neval
+    ##     fun1() 15.04571 20.65586 15.08735 21.26066 20.65319 9.241889   100
+    ##  fun1alt()  1.00000  1.00000  1.00000  1.00000  1.00000 1.000000   100
 
 2.  Find the column max (hint: Checkout the function `max.col()`).
 
@@ -85,9 +89,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: relative
-    ##        expr      min       lq     mean   median       uq      max neval
-    ##     fun2(x) 8.100417 8.391111 6.803401 8.097304 7.078576 1.180351   100
-    ##  fun2alt(x) 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000   100
+    ##        expr     min       lq     mean  median       uq       max neval
+    ##     fun2(x) 8.18345 7.384824 5.934007 6.69656 7.776044 0.7220181   100
+    ##  fun2alt(x) 1.00000 1.000000 1.000000 1.00000 1.000000 1.0000000   100
 
 ## Problem 3: Parallelize everyhing
 
@@ -111,11 +115,15 @@ my_boot <- function(dat, stat, R, ncpus = 1L) {
   idx <- matrix(sample.int(n, n*R, TRUE), nrow=n, ncol=R)
  
   # Making the cluster using `ncpus`
-  # STEP 1: GOES HERE
-  # STEP 2: GOES HERE
+  # STEP 1: Make Cluster
+  cl <- makePSOCKcluster(ncpus)
   
-    # STEP 3: THIS FUNCTION NEEDS TO BE REPLACES WITH parLapply
-  ans <- lapply(seq_len(R), function(i) {
+  # STEP 2: Set up (export data if needed)
+  clusterExport(cl, varlist = c('idx', 'dat', 'stat'), envir = environment())
+
+  
+  # STEP 3: THIS FUNCTION NEEDS TO BE REPLACES WITH parLapply
+  ans <- parLapply(cl, seq_len(R), function(i) {
     stat(dat[idx[,i], , drop=FALSE])
   })
   
@@ -123,9 +131,8 @@ my_boot <- function(dat, stat, R, ncpus = 1L) {
   ans <- do.call(rbind, ans)
   
   # STEP 4: GOES HERE
-  
+  stopCluster(cl)
   ans
-  
 }
 ```
 
@@ -140,20 +147,36 @@ my_stat <- function(d) coef(lm(y ~ x, data=d))
 
 # DATA SIM
 set.seed(1)
-n <- 500; R <- 1e4
+n <- 500
+R <- 1e4
 
-x <- cbind(rnorm(n)); y <- x*5 + rnorm(n)
+x <- cbind(rnorm(n))
+y <- x*5 + rnorm(n)
 
 # Checking if we get something similar as lm
 ans0 <- confint(lm(y~x))
-ans1 <- my_boot(dat = data.frame(x, y), mi_stat, R = R, ncpus = 2L)
+ans1 <- my_boot(dat = data.frame(x, y), my_stat, R = R, ncpus = 2L)
 
 # You should get something like this
 t(apply(ans1, 2, quantile, c(.025,.975)))
+```
+
+    ##                   2.5%      97.5%
+    ## (Intercept) -0.1386903 0.04856752
+    ## x            4.8685162 5.04351239
+
+``` r
 ##                   2.5%      97.5%
 ## (Intercept) -0.1372435 0.05074397
 ## x            4.8680977 5.04539763
 ans0
+```
+
+    ##                  2.5 %     97.5 %
+    ## (Intercept) -0.1379033 0.04797344
+    ## x            4.8650100 5.04883353
+
+``` r
 ##                  2.5 %     97.5 %
 ## (Intercept) -0.1379033 0.04797344
 ## x            4.8650100 5.04883353
@@ -165,9 +188,18 @@ ans0
 <!-- end list -->
 
 ``` r
-system.time(my_boot(dat = data.frame(x, y), mi_stat, R = 4000, ncpus = 1L))
-system.time(my_boot(dat = data.frame(x, y), mi_stat, R = 4000, ncpus = 2L))
+system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 1L))
 ```
+
+    ##    user  system elapsed 
+    ##    0.12    0.00    4.38
+
+``` r
+system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 2L))
+```
+
+    ##    user  system elapsed 
+    ##    0.13    0.07    3.55
 
 ## Problem 4: Compile this markdown document using Rscript
 
